@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>游戏设计文档 · BeaconGame Wiki</title>
+  <meta name="description" content="信标攻防 Beacon Attack & Defense 机制设计文档：核心流程、信标、技能、事件、竞技场、大厅、HUD、重生、统计、配置与扩展点。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('beacongame-theme');
+        var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body>
+  <nav id="navbar"></nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="hero-kicker">机制设计视角</p>
+      <h1 class="hero-title">信标攻防 · 游戏设计文档</h1>
+      <p class="hero-desc">描述玩家会感受到什么、每个机制为何成立，而非实现细节。全文按系统拆分章节，数值均标注「设计意图」，关键边界以「设计红线」收束。对应插件版本：BeaconGame-6.5。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="./download/BeaconGame-6.5.jar">下载 v6.5</a>
+        <a class="btn" href="./changelog.html">查看更新日志</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 文档布局：左侧栏（js 注入） + 右侧内容 -->
+  <div class="docs">
+    <aside id="sidebar"></aside>
+
+    <div class="docs-content">
+
+      <!-- ============ 一、总览与术语 ============ -->
+      <section id="ch1">
+        <h2 class="doc-h2">一、总览与术语</h2>
+
+        <h3 class="doc-h3">1. 一句话定义</h3>
+        <p>一局<strong>不对称限时攻防</strong>：防守方用短暂窗口埋下信标，进攻方随后限时拆除。信标全灭则攻方胜，撑到时间结束则守方胜。</p>
+
+        <h3 class="doc-h3">2. 设计支柱（Design Pillars）</h3>
+        <ul class="clean">
+          <li><strong>不对称但公平</strong>：攻防能力镜像互补，胜负取决于执行力而非先天强弱。</li>
+          <li><strong>时间即压力</strong>：放置阶段的"盲"与进攻阶段的"钟"，共同制造倒计时的紧迫感。</li>
+          <li><strong>随机搅局</strong>：事件系统定期打破均势，逼两队不断重新评估局势。</li>
+          <li><strong>成长正反馈</strong>：击杀与破标带来技能升级，让优势方滚雪球、劣势方看到翻盘窗口。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 一局的生命周期（节奏地图）</h3>
+        <pre><code>大厅集合 → 加入队列 → 管理员开局
+   ├─ 放置阶段（守方睁眼埋雷，攻方被蒙眼锁死）
+   └─ 进攻阶段（限时拆标 + 事件搅局 + 技能对撞）
+        ├─ 信标全灭 → 攻方胜
+        └─ 时间耗尽仍有信标 → 守方胜
+   → 5 秒结算复原 → 回大厅</code></pre>
+
+        <h3 class="doc-h3">4. 术语（设计视角）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>词</th><th>设计含义</th></tr></thead>
+            <tbody>
+              <tr><td>信标</td><td>守方的"命根子"，也是攻方的唯一目标物</td></tr>
+              <tr><td>进攻方</td><td>拆标者；放置阶段是"瞎子+被绑住"</td></tr>
+              <tr><td>防守方</td><td>埋标者；对局中全程"发光被盯"</td></tr>
+              <tr><td>放置阶段</td><td>守方的"建设窗口"，攻方的"无力期"</td></tr>
+              <tr><td>进攻阶段</td><td>真正的对抗期，一切机制在此交汇</td></tr>
+              <tr><td>竞技场</td><td>对局发生的悬空战场（无自然地形）</td></tr>
+              <tr><td>技能路线</td><td>玩家的三条成长分支，对应不同战斗风格</td></tr>
+              <tr><td>事件</td><td>按时间触发的"外部变量"，用来搅动节奏</td></tr>
+              <tr><td>重生点</td><td>死亡后回到的安全坐标，分攻/防/旁观</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">5. 全局平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>参数</th><th>当前值</th><th>设计角色</th></tr></thead>
+            <tbody>
+              <tr><td>信标数量</td><td>3</td><td>守方的"容错次数"，也决定攻方工作量</td></tr>
+              <tr><td>对局时长</td><td>10 分钟</td><td>进攻阶段的压迫上限</td></tr>
+              <tr><td>放置时长</td><td>100 秒</td><td>守方的建设预算</td></tr>
+              <tr><td>装备层级</td><td>钻石</td><td>baseline 战力，避免装备碾压</td></tr>
+              <tr><td>即时重生</td><td>开</td><td>减少"死亡即出局"的挫败，保持对抗密度</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 二、核心对局流程 ============ -->
+      <section id="ch2">
+        <h2 class="doc-h2">二、核心对局流程</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>把"一群人想打一局对抗"变成一段<strong>有起承转合</strong>的体验，而不是一上来就乱斗。核心是用<strong>两个阶段</strong>制造节奏断层：先给守方一段"安心建设"的时间，再突然拉开对抗的闸门。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <p><strong>开局</strong>：管理员确认开局后，所有人被拉进对局、分队（攻/防交替分配）、发装备。世界规则切换：背包保留、友伤关闭、时间定格正午、刷怪关闭——营造"干净擂台"感。</p>
+        <p><strong>放置阶段（守方窗口 / 攻方无力期）</strong>：守方睁眼，抓紧埋信标；攻方被<strong>蒙眼 + 锁在原地</strong>，只能转头，物理上无法靠近。设计意图：这段"攻方干等"不是惩罚，而是给守方<strong>安全犯错</strong>的预算。倒计时归零前 10 秒有滴答提示。</p>
+        <p><strong>进攻阶段（对抗期）</strong>：闸门拉开——攻方致盲解除、PVP 开启、守方开始<strong>全程发光</strong>。限时拆标开始，所有其他系统（事件、技能、HUD）在此刻全面激活。</p>
+        <p><strong>结算</strong>：胜负判定后，有 5 秒"谢幕"再复原世界，给玩家消化结果、看统计的时间。</p>
+
+        <h3 class="doc-h3">3. 胜负与队伍</h3>
+        <ul class="clean">
+          <li><strong>攻方胜</strong>：拆光所有信标，或守方一个都没埋（放置结束即判负，逼守方至少动手）。</li>
+          <li><strong>守方胜</strong>：时间耗尽仍有信标残留。</li>
+          <li>队伍<strong>交替分配</strong>（先来先攻），避免抱团；玩家也能手动换边，但<strong>对局进行中锁死</strong>，防止临阵倒戈。</li>
+        </ul>
+
+        <h3 class="doc-h3">4. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>参数</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>信标数</td><td>3</td><td>守方容错 = 攻方工作量</td></tr>
+              <tr><td>对局时长</td><td>10 分钟</td><td>进攻压迫上限</td></tr>
+              <tr><td>放置时长</td><td>100 秒</td><td>守方建设预算</td></tr>
+              <tr><td>装备层级</td><td>钻石</td><td>统一 baseline</td></tr>
+              <tr><td>清理半径</td><td>256 格</td><td>局末扫除上局残留信标</td></tr>
+              <tr><td>即时重生</td><td>开</td><td>死亡不丢装备、秒回</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-danger">
+          <span class="callout-title">单位雷区</span>
+          <strong>对局时长按"分钟"算，放置时长按"秒"算</strong>——两套单位极易在文案/配置里混淆，是设计沟通的高频坑。
+        </div>
+
+        <h3 class="doc-h3">5. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li>给<strong>信标系统</strong>发令：开局/终局清场，胜负直接读"还剩几个信标"。</li>
+          <li>给<strong>技能系统</strong>发令：进攻阶段开始时分配路线、解锁 UI。</li>
+          <li>给<strong>事件系统</strong>发令：把总时长交给事件系统，让它按百分比播事件。</li>
+          <li>给<strong>HUD</strong>喂数据：剩余时间、剩余信标都从这儿出。</li>
+          <li>给<strong>统计</strong>发信号：对局结束事件触发战绩结算。</li>
+        </ul>
+
+        <h3 class="doc-h3">6. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>攻防出生点必须同世界</strong>：否则对局物理上不成立，直接拒绝开局。</li>
+            <li><strong>守方 0 信标即负</strong>：强迫守方至少埋 1 个，避免出现"守方躺平赢"。</li>
+            <li><strong>结算 5 秒锁</strong>：期间拒绝开新局，防止状态撕裂。</li>
+            <li><strong>钳制不一致是隐患</strong>：对局时长允许 1–120 分钟但界面只放 1–60，信标数代码无上限但界面限 1–10。体验上限以界面为准。</li>
+            <li><strong>无信标专属回血</strong>：整张图靠"局末整体复原"还原，保证破坏是永久的、推进是真实的。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 三、信标系统 ============ -->
+      <section id="ch3">
+        <h2 class="doc-h2">三、信标系统</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>信标是整局游戏的<strong>唯一胜负轴</strong>。它把"攻防对抗"收敛成一个所有人都看得懂的目标：守方护住几个点，攻方端掉它们。没有信标，对抗就散了。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li><strong>埋（放置阶段，仅守方）</strong>：守方在蒙眼攻方面前抓紧把信标摆进战场。同一点不能重复埋。信标数量 = 守方的"容错次数"。</li>
+          <li><strong>护（进攻阶段）</strong>：阶段一开始，守方背包里多余的信标被清空（防偷偷补埋），且守方<strong>全程发光</strong>——等于头顶写着"来打我"。</li>
+          <li><strong>拆（进攻阶段，仅攻方）</strong>：攻方破坏信标时<strong>不掉落物品</strong>，信标数 -1。拆到最后一个归零 → 攻方直接获胜，全场播报。</li>
+          <li><strong>找</strong>：进攻方手里有"信标指南针"始终指向最近信标；平时信标本身不发光，仅临近终局（99% 事件）才被点亮高亮。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>默认信标数</td><td>3</td><td>守方容错 = 攻方工作量</td></tr>
+              <tr><td>拆标掉落</td><td>无</td><td>破坏即永久，避免刷物</td></tr>
+              <tr><td>指南针</td><td>指向最近信标</td><td>降低无效游走</td></tr>
+              <tr><td>守方发光</td><td>全程</td><td>用"被标记"换攻方清晰目标</td></tr>
+              <tr><td>残留清理</td><td>256 格</td><td>局末扫清上局信标</td></tr>
+              <tr><td>终局高亮</td><td>仅 99% 事件</td><td>终盘视觉爆点</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：信标数归零 = 攻方胜；放置结束 0 信标 = 攻方直接胜。</li>
+          <li><strong>技能系统</strong>：破标后给攻方全队一个短暂强化（"拆完爽一下"的正反馈）。</li>
+          <li><strong>HUD</strong>：剩余信标数全场可见，是玩家最关心的数字。</li>
+          <li><strong>统计</strong>：每次破标计入战绩。</li>
+          <li><strong>竞技场</strong>：信标必须落在战场范围内。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>无独立管理器</strong>：信标逻辑分散在"放置/破坏监听"与"对局主循环"两处，改机制要两头同步。</li>
+            <li><strong>活塞可推信标</strong>：允许用活塞转移信标，是设计内允许的"狡猾玩法"，指引坐标会同步更新。</li>
+            <li><strong>虚空无地面</strong>：战场是悬空的，信标必须靠守方自己搭台子——这是"建设"乐趣的来源，也是新手最容易卡住的地方（需引导）。</li>
+            <li><strong>0 信标即负</strong>：守方必须至少埋 1 个，堵死"躺平赢"漏洞。</li>
+            <li><strong>阶段切换清背包信标</strong>：防止进攻阶段开始后被偷埋。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 四、技能系统 ============ -->
+      <section id="ch4">
+        <h2 class="doc-h2">四、技能系统</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>纯靠拆/埋会很快变成"谁人多谁赢"。技能系统给个人一层<strong>成长与风格</strong>：随对局推进解锁主动技能、选择战斗路线，让操作与决策产生差异，拉开高手与新手的差距。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li><strong>选路线（开局前）</strong>：三条路线对应三种战斗性格——<strong>突袭</strong>（正面硬刚）、<strong>干扰</strong>（控场恶心人）、<strong>辅助</strong>（保队友）。未选时按阵营自动分配（进攻→突袭，防守→干扰），但<strong>辅助只能手动选</strong>。</li>
+          <li><strong>靠击杀解锁（滚雪球）</strong>：每击杀累积，跨过门槛（1 / 2 / 4 杀）解锁下一层。每次解锁全队补发补给（箭/金苹果）。</li>
+          <li><strong>靠事件升级</strong>：60% / 80% 事件会触发"技能强化"，全队技能层级 +1。</li>
+          <li><strong>释放</strong>：技能是手里一颗"星"，右键即放，有冷却。仅进攻阶段可用。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 技能数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>路线</th><th>技能</th><th>解锁击杀</th><th>冷却</th><th>效果（设计层）</th></tr></thead>
+            <tbody>
+              <tr><td>突袭</td><td>破阵</td><td>1</td><td>30s</td><td>自身力量，短促爆发</td></tr>
+              <tr><td>突袭</td><td>冲锋</td><td>2</td><td>25s</td><td>向前的猛冲（位移）</td></tr>
+              <tr><td>突袭</td><td>湮灭</td><td>4</td><td>60s</td><td>范围伤害 + 自身力量，团战核武</td></tr>
+              <tr><td>干扰</td><td>致盲</td><td>1</td><td>30s</td><td>最近敌人失明，断其视野</td></tr>
+              <tr><td>干扰</td><td>禁锢</td><td>2</td><td>45s</td><td>范围内减速+挖掘疲劳，锁死对方</td></tr>
+              <tr><td>干扰</td><td>枯竭</td><td>4</td><td>70s</td><td>范围内虚弱+饥饿，慢性放血</td></tr>
+              <tr><td>辅助</td><td>补给</td><td>1</td><td>40s</td><td>发箭/金苹果/石头，续命</td></tr>
+              <tr><td>辅助</td><td>守护</td><td>2</td><td>50s</td><td>友方抗性+回血，保排</td></tr>
+              <tr><td>辅助</td><td>窥敌</td><td>4</td><td>55s</td><td>范围内敌人显形，开图</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-note">
+          <span class="callout-title">被动（破标增益）</span>
+          每次拆掉信标，攻方全队短暂获得力量 + 向前冲量——把"拆标"和"爽感"绑在一起。
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：进攻阶段开始才分配路线、解封技能。</li>
+          <li><strong>事件系统</strong>：60%/80% 的"技能强化"直接拉全队层级。</li>
+          <li><strong>信标系统</strong>：破标触发全队增益。</li>
+          <li><strong>HUD</strong>：行动条末尾常驻技能状态（路线/击杀进度/冷却）。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>仅进攻阶段可放</strong>：放置阶段锁死，避免开局秒放破坏建设窗口。</li>
+            <li><strong>冷却防刷</strong>：冷却中释放被拒并提示。</li>
+            <li><strong>冲锋用合法位移</strong>：走"速度"而非瞬移，避开反作弊误判。</li>
+            <li><strong>升级封顶</strong>：事件升级不超过路线长度，避免溢出。</li>
+            <li><strong>数值驱动优先</strong>：技能数值写在配置里，调平衡不用改代码；但新增机制类型仍需动底层。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 五、对局事件系统 ============ -->
+      <section id="ch5">
+        <h2 class="doc-h2">五、对局事件系统</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>纯对抗容易陷入"谁先手谁赢"的死板节奏。事件系统是一台<strong>按时间自动搅局的机器</strong>：到点就给全队发点东西、或丢个乱子，逼两队不断重新读局势。它是节奏的"呼吸阀"。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <p>事件<strong>不靠玩家触发</strong>，而是随进攻阶段进度自动发生。进度按"已过去的时间占比"算，所以<strong>对局越长，事件发生的绝对时刻越晚，但相对位置不变</strong>。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>进度</th><th>类型</th><th>玩家会看到</th></tr></thead>
+            <tbody>
+              <tr><td>15%</td><td>固定</td><td>小空投：每人 +1 金苹果</td></tr>
+              <tr><td>30%</td><td>随机二选一</td><td>敏捷进攻（攻方加速）/ 防守阳痿（守方虚弱）</td></tr>
+              <tr><td>50%</td><td>固定</td><td>大空投：每人 附魔金苹果 + 不死图腾</td></tr>
+              <tr><td>60%</td><td>随机三选一</td><td>核打击 / 移形换影 / 技能强化</td></tr>
+              <tr><td>80%</td><td>随机三选一</td><td>同上三个再抽一次</td></tr>
+              <tr><td>99%</td><td>固定</td><td>终局总攻：所有信标被点亮高亮，直到结束</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>每次触发：全屏弹事件名 + 说明、聊天广播、信标激活音效。BossBar 上还会<strong>实时显示"距下次事件还有几秒"</strong>。</p>
+        <p><strong>随机三选一</strong>那组是真正的"搅局王"：</p>
+        <ul class="clean">
+          <li><strong>核打击</strong>：每人头顶砸下点燃的 TNT（约 30 格高）——逼迫走位。</li>
+          <li><strong>移形换影</strong>：随机两两交换位置 10 次——瞬间打乱阵型。</li>
+          <li><strong>技能强化</strong>：全队技能层级 +1——直接拉高战力。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>固定事件</td><td>15 / 50 / 99%</td><td>锚点式节奏，保证"必有"的关键时刻</td></tr>
+              <tr><td>随机组</td><td>30（2选1）/ 60（3选1）/ 80（3选1）</td><td>制造"不知道来啥"的悬念</td></tr>
+              <tr><td>随机权重</td><td>等权</td><td>简单公平</td></tr>
+              <tr><td>小空投</td><td>金苹果×1</td><td>开局安慰奖</td></tr>
+              <tr><td>大空投</td><td>附魔金苹果+图腾</td><td>中期保命</td></tr>
+              <tr><td>敏捷进攻</td><td>攻方加速 45s</td><td>给攻方推进窗口</td></tr>
+              <tr><td>防守阳痿</td><td>守方虚弱 15s</td><td>给攻方突破口</td></tr>
+              <tr><td>核打击</td><td>头顶+30格 TNT，引信 80 tick</td><td>强制走位</td></tr>
+              <tr><td>事件播报</td><td>淡入1s/停留6s/淡出2s</td><td>让玩家看清"发生了什么"</td></tr>
+              <tr><td>终局高亮</td><td>每 20 tick 粒子</td><td>终盘视觉爆点</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：进攻阶段开始接收总时长，每秒被"滴答"问一下"到事件没"。</li>
+          <li><strong>技能系统</strong>：60%/80% 的"技能强化"直接拉全队层级。</li>
+          <li><strong>信标系统</strong>：99% 事件把所有信标点亮。</li>
+          <li><strong>HUD</strong>：把"下次事件倒计时"喂给 BossBar。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>百分比驱动而非绝对时间</strong>：时长改长改短，事件相对位置不变。</li>
+            <li><strong>每个事件只发生一次</strong>：固定事件和随机组都去重。</li>
+            <li><strong>当前无加权随机</strong>：想要"稀有事件"得改抽选逻辑，目前三选项平权。</li>
+            <li><strong>实体必须清理</strong>：终局高亮用的隐形支架和粒子任务，对局结束必须回收，否则泄漏到下一局。</li>
+            <li><strong>尚未实机验证</strong>：事件系统只过了编译，触发时机/显示/随机正确性/清理都需在游戏里跑一遍确认。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 六、竞技场与领地边界 ============ -->
+      <section id="ch6">
+        <h2 class="doc-h2">六、竞技场与领地边界</h2>
+
+        <div class="callout callout-warn">
+          <span class="callout-title">5.0 机制变更</span>
+          边界/权限不再由插件手写代码夹人，而是<strong>硬依赖服务端领地插件</strong>，由竞技场领地的旗标原生托管移动/进入、PvP、爆炸、火焰、流体与活塞。服务器须安装领地插件才能加载本插件。
+        </div>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>对抗需要一个<strong>有边界的擂台</strong>：太大则两队永远碰不上，太小则没有走位空间。边界系统定义"战场在哪、掉出去会怎样"，同时负责反作弊。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li><strong>战场范围</strong>：竞技场是悬空盒子，<strong>头顶敞开、四周由领地插件锁定</strong>：非成员，以及末影珍珠、紫颂果、活塞弹射、水流带人等外力，都无法越界。立体走位与高空战术依旧是玩法核心。</li>
+          <li><strong>底面是虚空</strong>：一旦掉到盒子下沿以下，会被<strong>瞬间送回本方重生点</strong>，并清掉下坠速度，避免摔死（软惩罚，不计入战绩）。</li>
+          <li><strong>反作弊（后台）</strong>：放置阶段会锁定进攻方站位；越界、异常位移由领地旗标与后台巡检共同兜底。</li>
+          <li><strong>划地（管理员）</strong>：用"领地木锄"左键/右键点两个对角框出战场水平范围；加载时后台按此范围自动建/复用领地。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>最小开局人数</td><td>2</td><td>至少能凑一攻一防</td></tr>
+              <tr><td>最大队列</td><td>20</td><td>防单局过载</td></tr>
+              <tr><td>边界拦截</td><td>领地插件原生拦截</td><td>非成员及外力原生存栏，立体玩法不受限</td></tr>
+              <tr><td>边界顶</td><td>无（开放高空）</td><td>给立体玩法空间</td></tr>
+              <tr><td>底面判定</td><td>低于盒子下沿</td><td>触发"送回重生点"</td></tr>
+              <tr><td>自动开局</td><td>默认开但已停用</td><td>现改为管理员手动确认</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：三方的重生点都从这里出，开局强校验"必须同世界"。</li>
+          <li><strong>信标系统</strong>：信标必须落在战场盒子内。</li>
+          <li><strong>玩家状态</strong>：掉出底面回重生点的"清速度"逻辑是防摔伤关键。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>边界由领地插件托管（硬依赖）</strong>：服务器必须安装领地插件，否则本插件不加载。</li>
+            <li><strong>区域可自动建</strong>：加载时按 arenas.yml 的 region-min/max 自动建/复用领地；但没划地的竞技场不会生成领地，边界仍放开。</li>
+            <li><strong>管理员豁免边界</strong>：方便调试，但管理权限要可信。</li>
+            <li><strong>无顶是刻意设计</strong>：高空战术是玩法一部分，但需服务端视距/性能支撑。</li>
+            <li><strong>回重生点不算死亡</strong>：底面虚空是传送惩罚，不进统计。</li>
+            <li><strong>自动开局已停用</strong>：实际开局靠管理员确认。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 七、大厅与虚空世界 ============ -->
+      <section id="ch7">
+        <h2 class="doc-h2">七、大厅与虚空世界</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>玩家需要一个<strong>安全的中转站</strong>（大厅）和一个<strong>对局入口世界</strong>（游戏世界），两者都做成"纯虚空"——没有自然地形，一切由玩家/管理员自己搭建。把"建图"的乐趣和控制权交还给服务器运营。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li><strong>大厅</strong>：和平、关 PVP 的休整区。里面有传送 NPC（写着"传送到游戏世界"的小立牌），右键即去对局入口。</li>
+          <li><strong>游戏世界</strong>：开 PVP 的入口层。真正对局实际发生在另一个"竞技场世界"。</li>
+          <li><strong>落点与重生点可配</strong>：管理员能设定"从大厅传到游戏世界落在哪""在大厅死了回哪""在游戏世界死了回哪"。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>大厅世界</td><td>beacongame_lobby（PVP 关）</td><td>安全区</td></tr>
+              <tr><td>游戏世界</td><td>beacongame_game（PVP 开）</td><td>入口即对抗氛围</td></tr>
+              <tr><td>默认坐标</td><td>(0.5, 65, 0.5)</td><td>占位，实际需搭台</td></tr>
+              <tr><td>默认难度</td><td>和平</td><td>大厅不死不刷怪</td></tr>
+              <tr><td>传送媒介</td><td>盔甲架伪 NPC</td><td>轻量，无需额外插件</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：游戏世界就是对局世界的"门面"。</li>
+          <li><strong>玩家状态</strong>：非对局死亡按所在世界用对应重生点。</li>
+          <li><strong>竞技场</strong>：大厅/游戏/竞技场是<strong>三个不同世界</strong>，传送与重生分别管理。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>纯虚空无地面</strong>：默认坐标悬在半空，玩家落进去会掉——必须由管理员搭平台或设重生点，这是最大的"上手坑"。</li>
+            <li><strong>已生成世界不自动改</strong>：旧世界目录不会因代码改了就变地形，需删目录重生。</li>
+            <li><strong>游戏世界会自清</strong>：游戏世界启动时会删旧目录重生为纯虚空，<strong>里面自定义结构会丢</strong>——上服前务必备份竞技场。</li>
+            <li><strong>NPC 是盔甲架</strong>：不是真实体，靠标签比对识别右键。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 八、HUD 与提示系统 ============ -->
+      <section id="ch8">
+        <h2 class="doc-h2">八、HUD 与提示系统</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>对抗信息越清楚，玩家越能做出决策。HUD 的职责是把对局关键状态<strong>"无脑可读"</strong>地呈现在眼前：全局进度给 BossBar，个人任务给 ActionBar，大事件给全屏播报。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <p><strong>顶部 BossBar（全局，全场可见）</strong>：放置阶段显示"还剩多少秒建设 + 已埋几个信标 + 进度条"；进攻阶段显示"倒计时时钟 + 还剩几个信标 + 距下次事件还有几秒 + 进度条"，红色调压迫感拉满。</p>
+        <p><strong>底部 ActionBar（个人，每秒刷新）</strong>：按身份显示不同任务——攻方放置中"你是进攻方，干等"、进攻中"拆光所有信标！剩 X 个"；守方放置中"快埋信标！已埋 X/Y"、进攻中"护住信标！剩 X 个"；旁观"观战中，剩 X 个"。末尾常驻技能状态。</p>
+        <p><strong>大事件播报</strong>：阶段切换、信标被拆、事件触发，都会全屏弹 Title + 聊天广播 + 音效。信标被拆时，拆的人还会被短暂"点亮"10 秒。</p>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>BossBar 刷新</td><td>每秒</td><td>信息实时，但不晃眼</td></tr>
+              <tr><td>下次事件倒计时</td><td>实时秒数</td><td>给玩家预期管理</td></tr>
+              <tr><td>信标摧毁 Title</td><td>停留 1.2s</td><td>短促一瞥</td></tr>
+              <tr><td>事件 Title</td><td>淡入1s/停留6s/淡出2s</td><td>让玩家看清发生了什么</td></tr>
+              <tr><td>破标暴露</td><td>发光 10s</td><td>给守方"报仇对象"</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：时间、信标数都从对局主循环取。</li>
+          <li><strong>事件系统</strong>：BossBar 的"下次事件倒计时"来自事件系统。</li>
+          <li><strong>技能系统</strong>：ActionBar 末尾的技能状态来自技能系统。</li>
+          <li><strong>信标系统</strong>：剩余信标数是 HUD 最核心的数字。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>BossBar 长度有限</strong>：拼接段太多会被截断，新增信息务必精简。</li>
+            <li><strong>文案双语</strong>：所有提示走多语言文件，新增须同步中英文，否则回退默认。</li>
+            <li><strong>ActionBar 会被覆盖</strong>：每 tick 重写，过长文本可能显示不全。</li>
+            <li><strong>音效集中管理</strong>：BossBar/公告/事件的音效应统一出处。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 九、玩家状态与重生 ============ -->
+      <section id="ch9">
+        <h2 class="doc-h2">九、玩家状态与重生</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>死亡不应等于"出局"。这套系统保证：对局中死亡<strong>秒回、不丢装备、状态归位</strong>，让对抗保持高密度、低挫败；同时用一系列"保护规则"堵住作弊与破坏。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li><strong>死亡与重生</strong>：死了不掉物品、不掉经验，1 秒后自动重生回<strong>本方重生点</strong>；重生后满血满饱、清掉药水效果。</li>
+          <li><strong>坠落保护</strong>：掉出战场底面被送回重生点时，会<strong>清掉下坠速度</strong>，避免"刚回安全点又摔死"。</li>
+          <li><strong>放置阶段冻结</strong>：放置阶段进攻方被锁在原地（只能转头）。</li>
+          <li><strong>指令与破坏封锁</strong>：对局中不能乱飞、乱给物品、乱改世界（传送/kill/时间/天气等敏感指令被禁）；不能炸方块、动容器和装饰实体。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项</th><th>当前值</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>即时重生</td><td>开（1 秒后）</td><td>降低挫败，保持对抗密度</td></tr>
+              <tr><td>重生状态</td><td>满血满饱/清药水</td><td>公平回起点</td></tr>
+              <tr><td>守方发光</td><td>全程</td><td>重生也维持"被标记"</td></tr>
+              <tr><td>进攻致盲</td><td>放置阶段全程</td><td>重生也锁死</td></tr>
+              <tr><td>出界提示冷却</td><td>5 秒</td><td>给反馈但不刷屏</td></tr>
+              <tr><td>指令黑名单</td><td>传送/kill/时间/天气…</td><td>堵住对局内破坏手段</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：重生归位、装备重发、发光/致盲还原由主循环统一管。</li>
+          <li><strong>大厅/竞技场</strong>：非对局死亡按所在世界用对应重生点。</li>
+          <li><strong>统计</strong>：死亡/击杀在此计入战绩。</li>
+          <li><strong>技能系统</strong>：重生重发技能物品。</li>
+          <li><strong>边界</strong>：坠落清速度逻辑在边界/反作弊处。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>即时重生默认开</strong>：关掉后走原生重生，可能丢对局内装备逻辑。</li>
+            <li><strong>背包保留仅对局内</strong>：非对局世界不受此约束。</li>
+            <li><strong>指令黑名单要随版本维护</strong>：新增破坏类命令必须补进列表。</li>
+            <li><strong>虚空环境需配平台</strong>：重生点若无台子仍会坠空。</li>
+            <li><strong>旁观者不受冻结</strong>：移动/指令封锁只针对参与者与旁观。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 十、统计与排行 ============ -->
+      <section id="ch10">
+        <h2 class="doc-h2">十、统计与排行</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>玩家需要<strong>成长感与炫耀资本</strong>。统计系统把每局表现沉淀成个人战绩，并用排行榜让"谁更强"可视化，支撑长期留存与轻量竞争。</p>
+
+        <h3 class="doc-h3">2. 玩家实际经历什么</h3>
+        <ul class="clean">
+          <li>每局结束，系统按胜负给攻防双方记胜/负、加场次；击杀、死亡、破标各自累计。</li>
+          <li>玩家可随时用命令查排行榜，按胜场 / KDR / 击杀 / 死亡 / 破标 / 场次 排序，分页浏览。</li>
+          <li>KDR（击杀死亡比）0 死亡且有过击杀时记为极大值，避免"除零"。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>字段</th><th>含义</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>胜/负</td><td>局数</td><td>核心战力标签</td></tr>
+              <tr><td>击杀/死亡</td><td>个人对抗</td><td>KDR 来源</td></tr>
+              <tr><td>破标</td><td>团队贡献</td><td>鼓励"拆"而非只"杀"</td></tr>
+              <tr><td>场次</td><td>参与度</td><td>长期留存指标</td></tr>
+              <tr><td>KDR</td><td>击杀/死亡（0死→极大值）</td><td>排行榜常驻维度</td></tr>
+              <tr><td>每页</td><td>10 条</td><td>信息密度适中</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程 / 事件</strong>：对局结束事件触发战绩结算。</li>
+          <li><strong>指令</strong>：排行榜命令读取排行数据。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>单人库并发</strong>：SQLite 单文件，高频写需串行；当前由主线程事件驱动，压力可控。</li>
+            <li><strong>KDR 边界</strong>：死亡为 0 时给极大值占位，避免除零。</li>
+            <li><strong>名称冗余存库</strong>：UUID 为主键防改名丢数据，名字冗余便于展示。</li>
+            <li><strong>旁观/未参与不计</strong>：只统计真正参与者，避免刷数据。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ 十一、配置与指令 ============ -->
+      <section id="ch11">
+        <h2 class="doc-h2">十一、配置与指令</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>设计师/服主需要一把"调音台"：能不改代码就调对局参数、划战场、发规则。命令与配置文件就是这把台子，决定了<strong>这局游戏长什么样</strong>。</p>
+
+        <h3 class="doc-h3">2. 服主实际会做什么</h3>
+        <ul class="clean">
+          <li><strong>调对局参数</strong>：信标数量、对局时长、放置时长、装备层级。注意：<strong>对局时长按分钟、放置时长按秒</strong>。</li>
+          <li><strong>划战场与设重生点</strong>：用木锄框出竞技场范围，设定攻/防/旁观三方出生点。</li>
+          <li><strong>发规则与排行展示</strong>：规则文本、展示牌内容可配置。</li>
+          <li><strong>玩家侧命令</strong>：加入/退出队列、看竞技场列表、查排行、看技能信息、求帮助。</li>
+          <li><strong>管理员命令</strong>：开局/停局、改参数、设重生点、划区域、放规则牌、发规则书、调技能等。</li>
+        </ul>
+
+        <h3 class="doc-h3">3. 关键数值与平衡基线（旋钮范围）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>参数</th><th>代码允许</th><th>界面限制</th><th>设计提示</th></tr></thead>
+            <tbody>
+              <tr><td>信标数</td><td>≥1</td><td>1–10</td><td>体验上限以界面为准</td></tr>
+              <tr><td>对局时长</td><td>1–120 分钟</td><td>1–60 分钟</td><td>过长节奏松、过短无博弈</td></tr>
+              <tr><td>放置时长</td><td>10–300 秒</td><td>±10</td><td>太短新手来不及</td></tr>
+              <tr><td>装备层级</td><td>4 档</td><td>循环切换</td><td>统一 baseline 防碾压</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li>配置驱动<strong>所有</strong>系统：对局参数→核心流程，出生点/区域→竞技场，技能数值→技能系统，世界/落点→大厅，规则文本→展示。</li>
+          <li>命令是<strong>唯一</strong>修改运行期配置与触发对局的入口（NPC 传送除外）。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>钳制不一致是隐患</strong>：代码与界面范围不同，以界面标注为体验上限。</li>
+            <li><strong>运行期写入</strong>：落点/重生点/NPC 位置由命令写回配置，需保存。</li>
+            <li><strong>对局中禁改</strong>：非空闲状态拒绝改参数/换边。</li>
+            <li><strong>权限两级</strong>：仅 管理员 / 玩家；管理员豁免边界与指令封锁。</li>
+            <li><strong>双语维护</strong>：新增提示文案须同步中英文。</li>
+          </ul>
+        </div>
+
+        <h4 class="doc-h4">常用命令一览</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>命令</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>/bg join</code></td><td>加入等待队列</td></tr>
+              <tr><td><code>/bg leave</code></td><td>退出队列</td></tr>
+              <tr><td><code>/bg arenas</code></td><td>查看竞技场列表</td></tr>
+              <tr><td><code>/bg top</code></td><td>查看排行榜</td></tr>
+              <tr><td><code>/bg settings</code></td><td>查看设置</td></tr>
+              <tr><td><code>/bg skill info</code></td><td>技能说明</td></tr>
+              <tr><td><code>/bg admin</code></td><td>管理员图形设置面板</td></tr>
+              <tr><td><code>/bg start</code> / <code>/bg stop</code></td><td>开始 / 结束对局</td></tr>
+              <tr><td><code>/bg team</code> / <code>/bg res</code> / <code>/bg region</code> / <code>/bg sign</code></td><td>阵营 / 重生点 / 区域 / 规则牌</td></tr>
+              <tr><td><code>/bg reload</code> / <code>/bg lobby</code></td><td>重载配置 / 回大厅</td></tr>
+              <tr><td><code>/hub</code></td><td>返回大厅</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 十二、自定义事件与扩展点 ============ -->
+      <section id="ch12">
+        <h2 class="doc-h2">十二、自定义事件与扩展点</h2>
+
+        <h3 class="doc-h3">1. 这个系统要解决什么</h3>
+        <p>一款好的对抗插件不该是"黑盒"。它要对外暴露<strong>关键时刻的信号</strong>和<strong>实时数据接口</strong>，让其他插件能搭车，也让未来扩展有清晰入口。这是"可生长性"的设计。</p>
+
+        <h3 class="doc-h3">2. 对外暴露了什么</h3>
+        <p><strong>关键时刻信号（自定义事件）</strong>：</p>
+        <ul class="clean">
+          <li>对局开始（带攻防名单与世界）</li>
+          <li>对局结束（带胜负）</li>
+          <li>信标被拆（带下手人、位置、剩余数——剩余 0 即攻方胜）</li>
+          <li>技能释放（带释放者、技能 ID、位置）</li>
+          <li>技能解锁（带玩家、路线、层级 1–3）</li>
+        </ul>
+        <p><strong>实时数据接口（占位符）</strong>：支持 PlaceholderAPI 时，可读取剩余信标、对局状态、攻防人数、剩余时间、上次胜负、技能路线/层级/击杀/冷却等。</p>
+        <p><strong>扩展入口</strong>：想加事件→在对局事件系统加一个"百分比触发点"；想加技能→先在技能配置加路线/层级；想加 HUD 段→在顶部条/行动条追加（注意长度上限）；想加统计→加字段 + 排行榜分支。</p>
+
+        <h3 class="doc-h3">3. 关键数值与契约基线</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>信号</th><th>关键字段</th><th>设计意图</th></tr></thead>
+            <tbody>
+              <tr><td>信标被拆</td><td>剩余数（0=攻方胜）</td><td>监听方可据此判定胜负，不必自己算</td></tr>
+              <tr><td>技能解锁</td><td>层级 1–3</td><td>对应 t1/t2/t3，便于外部展示</td></tr>
+              <tr><td>上次胜负</td><td>ATTACKER/DEFENDER/NONE</td><td>无对局时给 NONE，避免歧义</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="doc-h3">4. 它和别的系统怎么咬合</h3>
+        <ul class="clean">
+          <li><strong>核心流程</strong>：开局/结束事件由主循环发出。</li>
+          <li><strong>信标系统</strong>：信标被拆事件桥接破标与统计/外部监听。</li>
+          <li><strong>技能系统</strong>：释放/解锁事件暴露技能行为。</li>
+          <li><strong>统计</strong>：对局结束事件触发战绩自动结算。</li>
+        </ul>
+
+        <h3 class="doc-h3">5. 设计红线与边界</h3>
+        <div class="callout callout-warn">
+          <ul class="checks">
+            <li><strong>事件只通知、不改状态</strong>：监听方不应在对局内部事件里反向改核心状态，避免竞态。</li>
+            <li><strong>占位符依赖 PAPI</strong>：无 PlaceholderAPI 时静默跳过，不报错。</li>
+            <li><strong>数值驱动优先</strong>：技能/事件尽量走配置，降低改动成本。</li>
+            <li><strong>临时实体必清理</strong>：终局高亮等支架/粒子任务须回收，扩展事件同理。</li>
+            <li><strong>向后兼容</strong>：新增事件/占位符须保留旧契约，不破坏既有监听插件。</li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span>© <span id="year">2026</span> BeaconGame Wiki</span>
+      <span class="footer-note">纯静态 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/Beacongame">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script src="./js/main.js" defer></script>
+</body>
+</html>
