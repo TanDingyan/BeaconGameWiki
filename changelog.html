@@ -13,6 +13,7 @@
         var saved = localStorage.getItem('beacongame-theme');
         var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
+        if (localStorage.getItem('beacongame-lang') === 'en') document.documentElement.classList.add('lang-en');
       } catch (e) {}
     })();
   </script>
@@ -23,12 +24,12 @@
 
   <header class="hero">
     <div class="wrap">
-      <p class="hero-kicker">玩家与管理员可读</p>
-      <h1 class="hero-title">更新日志</h1>
-      <p class="hero-desc">信标攻防小游戏历次版本的新增与修复说明。当前最新版为 <strong>BeaconGame-6.5</strong>。</p>
+      <p class="hero-kicker" data-en="For players and admins">玩家与管理员可读</p>
+      <h1 class="hero-title" data-en="Changelog">更新日志</h1>
+      <p class="hero-desc" data-en="Release notes for Beacon Attack & Defense, covering new features and fixes from v6.0 to v6.5. The current latest is BeaconGame-6.5.">信标攻防小游戏历次版本的新增与修复说明。当前最新版为 <strong>BeaconGame-6.5</strong>。</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="./download/BeaconGame-6.5.jar">下载 v6.5</a>
-        <a class="btn" href="./design.html">游戏设计文档</a>
+        <a class="btn btn-primary" href="./download/BeaconGame-6.5.jar" data-en="Download v6.5">下载 v6.5</a>
+        <a class="btn" href="./design.html" data-en="Game Design Doc">游戏设计文档</a>
       </div>
     </div>
   </header>
@@ -39,109 +40,109 @@
     <div class="docs-content">
 
       <article class="version">
-        <h2 class="version-id">6.5　新增「服务器游戏规则」一键设置</h2>
+        <h2 class="version-id" data-en="6.5 · One-click Server Game Rules">6.5　新增「服务器游戏规则」一键设置</h2>
         <ul>
-          <li><strong>/bg 菜单新增「服务器游戏规则」项</strong>：入口在总控面板「管理」区，点开后列出一批布尔型原版游戏规则（如 doMobSpawning、mobGriefing、keepInventory、doDaylightCycle 等），每项可点击切换开/关。</li>
-          <li><strong>一键应用到所有世界</strong>：界面底部「应用到大厅与竞技场」按钮会把当前配置写入大厅与所有竞技场世界（不影响主世界/下界/末地等其它维度），并提示生效数量。</li>
-          <li>规则配置存于独立的 <code>plugins/BeaconGame/gamerules.yml</code>（不与 config.yml 混用，避免冲掉中文注释），首次启动自动生成带默认值与注释的文件。</li>
-          <li>插件启动与执行 <code>/bg reload</code> 时会自动按 <code>gamerules.yml</code> 重新应用到大厅与竞技场世界，保证配置长期生效。</li>
+          <li data-en="<strong>/bg menu adds a 'Server Game Rules' item</strong>: entry in the admin panel's 'Manage' area; opens a list of boolean vanilla rules (e.g. doMobSpawning, mobGriefing, keepInventory, doDaylightCycle), each toggled by click."><strong>/bg 菜单新增「服务器游戏规则」项</strong>：入口在总控面板「管理」区，点开后列出一批布尔型原版游戏规则（如 doMobSpawning、mobGriefing、keepInventory、doDaylightCycle 等），每项可点击切换开/关。</li>
+          <li data-en="<strong>Apply to all worlds with one click</strong>: the 'Apply to lobby & arenas' button at the bottom writes the current config to the lobby and all arena worlds (not overworld/nether/end), and reports how many took effect."><strong>一键应用到所有世界</strong>：界面底部「应用到大厅与竞技场」按钮会把当前配置写入大厅与所有竞技场世界（不影响主世界/下界/末地等其它维度），并提示生效数量。</li>
+          <li data-en="Rules are stored in a standalone <code>plugins/BeaconGame/gamerules.yml</code> (kept separate from config.yml to preserve Chinese comments), auto-generated with defaults and comments on first launch.">规则配置存于独立的 <code>plugins/BeaconGame/gamerules.yml</code>（不与 config.yml 混用，避免冲掉中文注释），首次启动自动生成带默认值与注释的文件。</li>
+          <li data-en="On plugin startup and on <code>/bg reload</code>, rules are auto-applied to lobby and arena worlds, ensuring long-term persistence.">插件启动与执行 <code>/bg reload</code> 时会自动按 <code>gamerules.yml</code> 重新应用到大厅与竞技场世界，保证配置长期生效。</li>
         </ul>
       </article>
 
       <article class="version">
-        <h2 class="version-id">6.4　地图设置新增「进攻方信标指南针」开关</h2>
+        <h2 class="version-id" data-en="6.4 · Attacker Beacon Compass Toggle in Map Settings">6.4　地图设置新增「进攻方信标指南针」开关</h2>
         <ul>
-          <li><strong>地图设置可开关信标指南针</strong>：在 <code>/bg</code> → 地图设置 → 参数区新增一项「进攻方信标指南针」，点击在开启/关闭间切换。开启后，进攻方每局获得一支「信标追踪指南针」，自动指向最近的防守方信标（用于定位并摧毁）；关闭后不再发放，已发放的会被移除。</li>
-          <li>配置键 <code>attacker-compass</code>（默认 <code>true</code>），保存在 <code>config.yml</code>，与信标个数/时长等并列，对所有地图统一生效。</li>
-          <li>切换即时生效：开局中打开开关会立刻给在场进攻方补发指南针，关闭则立即收回。</li>
+          <li data-en="<strong>Map settings can toggle the beacon compass</strong>: a new 'Attacker Beacon Compass' item in <code>/bg</code> → Map Settings → Parameters toggles on/off. When on, attackers receive a 'beacon-tracking compass' each match that points to the nearest defender beacon; when off, none is given and any issued one is removed."><strong>地图设置可开关信标指南针</strong>：在 <code>/bg</code> → 地图设置 → 参数区新增一项「进攻方信标指南针」，点击在开启/关闭间切换。开启后，进攻方每局获得一支「信标追踪指南针」，自动指向最近的防守方信标（用于定位并摧毁）；关闭后不再发放，已发放的会被移除。</li>
+          <li data-en="Config key <code>attacker-compass</code> (default <code>true</code>), stored in <code>config.yml</code> alongside beacon count/length, applies to all maps uniformly.">配置键 <code>attacker-compass</code>（默认 <code>true</code>），保存在 <code>config.yml</code>，与信标个数/时长等并列，对所有地图统一生效。</li>
+          <li data-en="Switch is instant: turning it on mid-match immediately issues compasses to present attackers; turning off immediately reclaims them.">切换即时生效：开局中打开开关会立刻给在场进攻方补发指南针，关闭则立即收回。</li>
         </ul>
       </article>
 
       <article class="version">
-        <h2 class="version-id">6.3　竞技场全面改名 BeaconGame 1~4 + 旧配置自动迁移</h2>
+        <h2 class="version-id" data-en="6.3 · Arenas renamed BeaconGame 1~4 + auto config migration">6.3　竞技场全面改名 BeaconGame 1~4 + 旧配置自动迁移</h2>
         <ul>
-          <li><strong>4 张地图统一改名</strong>：原来的 <code>default / map2 / map3 / map4</code> 现在叫 <strong>BeaconGame 1 / BeaconGame 2 / BeaconGame 3 / BeaconGame 4</strong>。竞技场 id、世界名、游戏内显示（大厅 NPC、玩家菜单、排行榜、帮助）全部统一。</li>
-          <li><strong>旧世界配置自动迁移</strong>：插件启动时会把旧 <code>arenas.yml</code>、<code>config.yml</code>（world-settings / lobby-npcs）、<code>displays.yml</code> 里指向旧世界名（如 <code>beacongame_default</code>）的出生点、边界、传送落点、传送 NPC、展示牌等，全部改指到新世界名。无需手动改配置。</li>
-          <li><strong>旧世界文件夹请手动删除</strong>：旧世界（如 <code>beacongame_default</code>、<code>beacongame_2</code>…）不会被自动删，启动后会按新名字新建空虚空世界；请在关服后手动删掉旧的空世界文件夹，避免占空间。</li>
+          <li data-en="<strong>Four maps uniformly renamed</strong>: the old <code>default / map2 / map3 / map4</code> are now <strong>BeaconGame 1 / 2 / 3 / 4</strong>. Arena id, world name, and in-game display (lobby NPC, player menu, leaderboard, help) all unified."><strong>4 张地图统一改名</strong>：原来的 <code>default / map2 / map3 / map4</code> 现在叫 <strong>BeaconGame 1 / BeaconGame 2 / BeaconGame 3 / BeaconGame 4</strong>。竞技场 id、世界名、游戏内显示（大厅 NPC、玩家菜单、排行榜、帮助）全部统一。</li>
+          <li data-en="<strong>Old world config auto-migrates</strong>: on startup the plugin rewrites old <code>arenas.yml</code>, <code>config.yml</code> (world-settings / lobby-npcs), and <code>displays.yml</code> references from old world names (e.g. <code>beacongame_default</code>) to the new ones — no manual edit needed."><strong>旧世界配置自动迁移</strong>：插件启动时会把旧 <code>arenas.yml</code>、<code>config.yml</code>（world-settings / lobby-npcs）、<code>displays.yml</code> 里指向旧世界名（如 <code>beacongame_default</code>）的出生点、边界、传送落点、传送 NPC、展示牌等，全部改指到新世界名。无需手动改配置。</li>
+          <li data-en="<strong>Delete old world folders manually</strong>: old worlds (e.g. <code>beacongame_default</code>, <code>beacongame_2</code>…) are not auto-deleted; after startup new void worlds are created under new names — delete the old empty folders after stopping the server to save space."><strong>旧世界文件夹请手动删除</strong>：旧世界（如 <code>beacongame_default</code>、<code>beacongame_2</code>…）不会被自动删，启动后会按新名字新建空虚空世界；请在关服后手动删掉旧的空世界文件夹，避免占空间。</li>
         </ul>
         <div class="callout callout-warn">
-          <span class="callout-title">管理员注意</span>
+          <span class="callout-title" data-en="Admin note">管理员注意</span>
           <ul class="checks">
-            <li>升级后首次启动会自动完成迁移并打印日志；如有异常，插件启动前已对 arenas.yml / config.yml 做了自动备份（最多 5 份），可回滚。</li>
-            <li>领地仍按 <code>beacongame_&lt;地图名&gt;</code> 命名（如 <code>beacongame_BeaconGame 1</code>），旧 <code>beacongame_default</code> 等领地会成为孤儿，不影响新对局。</li>
+            <li data-en="First launch after upgrade auto-migrates and prints logs; on anomaly, the plugin auto-backed-up arenas.yml / config.yml before startup (up to 5 copies) for rollback.">升级后首次启动会自动完成迁移并打印日志；如有异常，插件启动前已对 arenas.yml / config.yml 做了自动备份（最多 5 份），可回滚。</li>
+            <li data-en="Claims still follow <code>beacongame_&lt;map name&gt;</code> (e.g. <code>beacongame_BeaconGame 1</code>); old <code>beacongame_default</code> claims become orphans and do not affect new matches.">领地仍按 <code>beacongame_&lt;地图名&gt;</code> 命名（如 <code>beacongame_BeaconGame 1</code>），旧 <code>beacongame_default</code> 等领地会成为孤儿，不影响新对局。</li>
           </ul>
         </div>
       </article>
 
       <article class="version">
-        <h2 class="version-id">6.2　防守方不再被强制选技能 / 默认地图改名</h2>
+        <h2 class="version-id" data-en="6.2 · Defenders no longer forced to pick skills / default map renamed">6.2　防守方不再被强制选技能 / 默认地图改名</h2>
         <ul>
-          <li><strong>防守方不再被强制选技能</strong>：选技能路线界面现在只对进攻方开放。防守方本来就不能使用技能，之前却会在开局被要求选路线，现已修正。</li>
-          <li><strong>默认对局地图世界改名为「Beacongame 1」</strong>：代码默认世界名已从 <code>beacongame_default</code> 改为 <code>Beacongame 1</code>。已在运行的服务器请在 <code>plugins/BeaconGame/arenas.yml</code> 里把 <code>arenas.default.world</code> 改成 <code>Beacongame 1</code>，并<strong>关机后</strong>把服务器世界文件夹也改名为 <code>Beacongame 1</code>，否则插件会新建一个空世界、原地图消失。</li>
+          <li data-en="<strong>Defenders no longer forced to pick skills</strong>: the skill-route UI now opens only for attackers. Defenders cannot use skills and were previously prompted at match start; that is fixed."><strong>防守方不再被强制选技能</strong>：选技能路线界面现在只对进攻方开放。防守方本来就不能使用技能，之前却会在开局被要求选路线，现已修正。</li>
+          <li data-en="<strong>Default match world renamed to 'Beacongame 1'</strong>: the default world name changed from <code>beacongame_default</code> to <code>Beacongame 1</code>. Running servers should set <code>arenas.default.world</code> in <code>plugins/BeaconGame/arenas.yml</code> to <code>Beacongame 1</code>, and <strong>after shutdown</strong> rename the server world folder too, or the plugin creates a new empty world and the original map disappears."><strong>默认对局地图世界改名为「Beacongame 1」</strong>：代码默认世界名已从 <code>beacongame_default</code> 改为 <code>Beacongame 1</code>。已在运行的服务器请在 <code>plugins/BeaconGame/arenas.yml</code> 里把 <code>arenas.default.world</code> 改成 <code>Beacongame 1</code>，并<strong>关机后</strong>把服务器世界文件夹也改名为 <code>Beacongame 1</code>，否则插件会新建一个空世界、原地图消失。</li>
         </ul>
       </article>
 
       <article class="version">
-        <h2 class="version-id">6.1　菜单重设计 / 开局流程修复</h2>
+        <h2 class="version-id" data-en="6.1 · Menu redesign / kickoff flow fixes">6.1　菜单重设计 / 开局流程修复</h2>
         <ul>
-          <li><strong>玩家菜单</strong>：非管理员输入 <code>/bg</code> 直接打开玩家菜单，可一键加入某张地图的等待队列，并提供离开队列、排行榜、帮助、游戏说明、返回大厅等受限操作（不暴露任何管理指令）。</li>
-          <li><strong>开局改为纯手动</strong>：移除了"人数达标自动提示开局"的逻辑；现在只有管理员在菜单点「开始游戏」或执行 <code>/bg start</code> 才会开局。</li>
-          <li><strong>修复「从菜单设阵营后全员变观战」</strong>：原地图设置里有两个开始按钮，其中一个会绕过阵营分配直接空名单开局。现已合并为唯一正确的「开始游戏」按钮（按菜单分配的攻/防阵营组队，未分配者自动均衡补位），并实时显示当前状态与双方人数。</li>
-          <li><strong>修复「进入地图提示已在等待队列中」</strong>：加入队列前先清除玩家在所有地图队列中的残留记录，可正常切换地图；旧的错误开局路径遗留的卡死队列也被一并清除。</li>
-          <li><strong>管理员菜单更清晰</strong>：地图设置界面重新分区（参数 / 出生 / 区域 / 运行），运行区突出「开始游戏」「结束游戏」「阵营分配」，并实时显示对局状态。</li>
+          <li data-en="<strong>Player menu</strong>: non-admins typing <code>/bg</code> open the player menu, with one-click join to a map's queue, plus leave queue, leaderboard, help, game guide, return to lobby — no admin commands exposed."><strong>玩家菜单</strong>：非管理员输入 <code>/bg</code> 直接打开玩家菜单，可一键加入某张地图的等待队列，并提供离开队列、排行榜、帮助、游戏说明、返回大厅等受限操作（不暴露任何管理指令）。</li>
+          <li data-en="<strong>Kickoff is now manual only</strong>: removed the 'auto-prompt on enough players' logic; only an admin clicking 'Start Game' in the menu or running <code>/bg start</code> begins a match."><strong>开局改为纯手动</strong>：移除了"人数达标自动提示开局"的逻辑；现在只有管理员在菜单点「开始游戏」或执行 <code>/bg start</code> 才会开局。</li>
+          <li data-en="<strong>Fixed 'set team then everyone becomes spectator'</strong>: there were two start buttons; one bypassed team assignment and opened with an empty roster. Now merged into the single correct 'Start Game' (teams by menu assignment, unassigned auto-balanced), showing current state and both side counts."><strong>修复「从菜单设阵营后全员变观战」</strong>：原地图设置里有两个开始按钮，其中一个会绕过阵营分配直接空名单开局。现已合并为唯一正确的「开始游戏」按钮（按菜单分配的攻/防阵营组队，未分配者自动均衡补位），并在界面显示当前状态与双方人数。</li>
+          <li data-en="<strong>Fixed 'already in queue' on entering map</strong>: before joining, residual queue records across all maps are cleared, so map switching works; stuck queues from the old wrong path are also cleared."><strong>修复「进入地图提示已在等待队列中」</strong>：加入队列前先清除玩家在所有地图队列中的残留记录，可正常切换地图；同时旧的错误开局路径遗留的卡死队列也被一并清除。</li>
+          <li data-en="<strong>Cleaner admin menu</strong>: map settings re-zone (Parameters / Spawns / Regions / Runtime); the runtime zone highlights Start/Stop/Team and shows live match state."><strong>管理员菜单更清晰</strong>：地图设置界面重新分区（参数 / 出生 / 区域 / 运行），运行区突出「开始游戏」「结束游戏」「阵营分配」，并实时显示对局状态。</li>
         </ul>
       </article>
 
       <article class="version">
-        <h2 class="version-id">6.0　正式上线</h2>
-        <p>这是信标攻防插件对外发布的第一版，玩法与核心功能全部就绪。</p>
+        <h2 class="version-id" data-en="6.0 · Official Launch">6.0　正式上线</h2>
+        <p data-en="The first public release of the Beacon Attack & Defense plugin; all core gameplay and features are ready.">这是信标攻防插件对外发布的第一版，玩法与核心功能全部就绪。</p>
 
-        <h3 class="doc-h3">怎么玩</h3>
+        <h3 class="doc-h3" data-en="How to play">怎么玩</h3>
         <ul>
-          <li>在服务器大厅右键传送 NPC，或输入 <code>/bg join</code> 加入队列，等管理员 <code>/bg start</code> 开局。</li>
-          <li>一局分两个阶段：
+          <li data-en="Right-click the transfer NPC in the server lobby, or type <code>/bg join</code> to join the queue, then wait for an admin to <code>/bg start</code>.">在服务器大厅右键传送 NPC，或输入 <code>/bg join</code> 加入队列，等管理员 <code>/bg start</code> 开局。</li>
+          <li data-en="A match has two phases:">
             <ul>
-              <li><strong>布置阶段</strong>：防守方有时间放置信标、挖地形搭防御；进攻方会被暂时致盲。此阶段不能乱放普通方块，只能放信标。</li>
-              <li><strong>进攻阶段</strong>：PvP 开启，进攻方拿到「信标追踪指南针」去拆信标；拆光全部信标即胜，或防守方守到时间结束即胜。</li>
+              <li data-en="<strong>Placement</strong>: defenders have time to place beacons and dig/build defenses; attackers are temporarily blinded. Only beacons may be placed, not ordinary blocks."><strong>布置阶段</strong>：防守方有时间放置信标、挖地形搭防御；进攻方会被暂时致盲。此阶段不能乱放普通方块，只能放信标。</li>
+              <li data-en="<strong>Assault</strong>: PvP turns on; attackers get a 'beacon-tracking compass' to breach beacons. Breach them all to win, or defenders survive until time ends to win."><strong>进攻阶段</strong>：PvP 开启，进攻方拿到「信标追踪指南针」去拆信标；拆光全部信标即胜，或防守方守到时间结束即胜。</li>
             </ul>
           </li>
-          <li>过程中会按进度触发事件：空投补给、增益/减益、核打击、移形换影、技能强化、终局总攻等。</li>
-          <li>一局打完，场地和你的背包会自动还原，不用担心东西被改。</li>
+          <li data-en="Events fire by progress: airdrops, buffs/debuffs, nuclear strikes, position swaps, skill enhancements, final assault, etc.">过程中会按进度触发事件：空投补给、增益/减益、核打击、移形换影、技能强化、终局总攻等。</li>
+          <li data-en="After a match, the field and your inventory auto-restore — no worries about altered items.">一局打完，场地和你的背包会自动还原，不用担心东西被改。</li>
         </ul>
 
-        <h3 class="doc-h3">你能用的命令</h3>
+        <h3 class="doc-h3" data-en="Commands you can use">你能用的命令</h3>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>角色</th><th>命令</th></tr></thead>
+            <thead><tr><th data-en="Role">角色</th><th data-en="Commands">命令</th></tr></thead>
             <tbody>
-              <tr><td>玩家</td><td><code>/bg join</code>（加入）、<code>/bg leave</code>（退出）、<code>/bg arenas</code>（看场）、<code>/bg top</code>（排行）、<code>/bg settings</code>（设置）、<code>/bg help</code>（帮助）、<code>/bg skill info</code>（技能）、<code>/hub</code>（回大厅）</td></tr>
-              <tr><td>管理员</td><td><code>/bg admin</code>（面板）、<code>/bg start</code>、<code>/bg stop</code>、<code>/bg team</code>、<code>/bg res</code>、<code>/bg region</code>、<code>/bg sign</code>、<code>/bg skill</code>、<code>/bg reload</code>、<code>/bg lobby</code></td></tr>
+              <tr><td data-en="Player">玩家</td><td><code>/bg join</code>（加入）、<code>/bg leave</code>（退出）、<code>/bg arenas</code>（看场）、<code>/bg top</code>（排行）、<code>/bg settings</code>（设置）、<code>/bg help</code>（帮助）、<code>/bg skill info</code>（技能）、<code>/hub</code>（回大厅）</td></tr>
+              <tr><td data-en="Admin">管理员</td><td><code>/bg admin</code>（面板）、<code>/bg start</code>、<code>/bg stop</code>、<code>/bg team</code>、<code>/bg res</code>、<code>/bg region</code>、<code>/bg sign</code>、<code>/bg skill</code>、<code>/bg reload</code>、<code>/bg lobby</code></td></tr>
             </tbody>
           </table>
         </div>
 
-        <h3 class="doc-h3">技能系统</h3>
-        <p>进攻方可选三条进化路线（突袭 / 干扰 / 辅助），靠本局击杀解锁技能，背包里用「技能核心」右键释放；防守方负责守塔，不装备技能。</p>
+        <h3 class="doc-h3" data-en="Skill system">技能系统</h3>
+        <p data-en="Attackers pick one of three evolution routes (Assault / Disruption / Support), unlock skills by in-match kills, and cast with a 'skill core' right-click; defenders guard the towers and do not equip skills.">进攻方可选三条进化路线（突袭 / 干扰 / 辅助），靠本局击杀解锁技能，背包里用「技能核心」右键释放；防守方负责守塔，不装备技能。</p>
 
-        <h3 class="doc-h3">战绩与展示</h3>
+        <h3 class="doc-h3" data-en="Stats & display">战绩与展示</h3>
         <ul>
-          <li>自动记录胜/负、击杀、死亡、破标、场次，可用 <code>/bg top</code> 查看排行。</li>
-          <li>大厅和游戏里可看到胜场榜、KDR 榜、破标榜和当前对局状态展示牌。</li>
+          <li data-en="Automatically records win/loss, kills, deaths, breaches, matches; view rankings with <code>/bg top</code>.">自动记录胜/负、击杀、死亡、破标、场次，可用 <code>/bg top</code> 查看排行。</li>
+          <li data-en="Lobby and game show win boards, KDR boards, breach boards, and a live match-state display board.">大厅和游戏里可看到胜场榜、KDR 榜、破标榜和当前对局状态展示牌。</li>
         </ul>
 
-        <h3 class="doc-h3">这次版本顺手修好的问题（玩家能感知到的）</h3>
+        <h3 class="doc-h3" data-en="Issues also fixed this version (player-noticeable)">这次版本顺手修好的问题（玩家能感知到的）</h3>
         <ul>
-          <li>清除场地边界后，那片区域不会再被永久锁死、谁都进不去。</li>
-          <li>管理员改了场地大小后，实际保护范围会立刻按新范围生效。</li>
-          <li>万一某场没正常套上保护，开局前会重新补好并提醒管理员。</li>
-          <li>进攻阶段双方 PvP 开关更稳，不会偶尔关不掉或开不出。</li>
+          <li data-en="After clearing a field border, that area is no longer permanently locked so no one can enter.">清除场地边界后，那片区域不会再被永久锁死、谁都进不去。</li>
+          <li data-en="After an admin changes field size, the actual protected range takes effect immediately under the new bounds.">管理员改了场地大小后，实际保护范围会立刻按新范围生效。</li>
+          <li data-en="If a match somehow lacks protection, it is re-applied and the admin warned before kickoff — no 'thought it was protected but was naked'.">万一某场没正常套上保护，开局前会重新补好并提醒管理员。</li>
+          <li data-en="PvP toggle in the assault phase is more stable, no occasional stuck off/on.">进攻阶段双方 PvP 开关更稳，不会偶尔关不掉或开不出。</li>
         </ul>
 
         <div class="callout callout-tip">
-          <span class="callout-title">小提示</span>
+          <span class="callout-title" data-en="Tips">小提示</span>
           <ul class="checks">
-            <li>竞技场是虚空地形，落脚和掩体需要自己搭；纯虚空大厅会下坠，记得开飞行或自己铺块地。</li>
-            <li>本游戏依赖 Dominion 领地插件运行，由服主负责安装与维护。</li>
+            <li data-en="Arenas are void terrain — footing and cover must be built; a pure-void lobby makes you fall, so enable flight or lay some blocks.">竞技场是虚空地形，落脚和掩体需要自己搭；纯虚空大厅会下坠，记得开飞行或自己铺块地。</li>
+            <li data-en="This game depends on the Dominion claim plugin; installation and maintenance are the admin's responsibility.">本游戏依赖 Dominion 领地插件运行，由服主负责安装与维护。</li>
           </ul>
         </div>
       </article>
@@ -152,7 +153,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <span>© <span id="year">2026</span> BeaconGame Wiki</span>
-      <span class="footer-note">纯静态 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/Beacongame">GitHub</a></span>
+      <span class="footer-note" data-en="Static · Plain HTML/CSS/JS · GitHub">纯静态 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/Beacongame">GitHub</a></span>
     </div>
   </footer>
 

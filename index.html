@@ -1,52 +1,38 @@
 <!DOCTYPE html>
-<!--
-  【路径规则】本站在 GitHub Pages 子路径 /beacongame/ 下部署，
-  所有资源 / 跳转一律用相对路径，禁止以 "/" 开头的绝对路径。
--->
 <html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BeaconGame Wiki · 信标攻防</title>
   <meta name="description" content="Minecraft Paper 服务端小游戏插件「信标攻防 Beacon Attack & Defense」的静态 Wiki：玩法、机制、技能、事件、配置与更新日志。" />
-
-  <!-- 站点图标用内联 SVG（data URI）：无外部文件路径，永不 404 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>" />
-
-  <!-- 相对路径引入样式 -->
   <link rel="stylesheet" href="./css/style.css" />
-
-  <!-- 主题内联脚本：首屏绘制前写入 data-theme，避免刷新闪烁（key 必须 = js/main.js 里的 beacongame-theme） -->
   <script>
     (function () {
       try {
         var saved = localStorage.getItem('beacongame-theme');
         var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
+        if (localStorage.getItem('beacongame-lang') === 'en') document.documentElement.classList.add('lang-en');
       } catch (e) {}
     })();
   </script>
 </head>
 
 <body>
-  <!-- 导航栏容器：内容由 js/main.js 注入 -->
   <nav id="navbar"></nav>
 
   <main>
     <!-- ===== 首屏 ===== -->
     <header class="hero">
       <div class="wrap">
-        <p class="hero-kicker">Minecraft Java 26.2 · Paper 服务端插件</p>
-        <h1 class="hero-title">BeaconGame 信标攻防 Wiki</h1>
-        <p class="hero-desc">
-          一局<strong>不对称限时攻防</strong>：防守方用短暂窗口埋下信标，进攻方随后限时拆除。
-          信标全灭则攻方胜，撑到时间结束则守方胜。这里收录完整的机制设计、技能数值、事件表、配置指令与版本更新日志。
-        </p>
+        <p class="hero-kicker" data-en="Minecraft Java 26.2 · Paper Server Plugin">Minecraft Java 26.2 · Paper 服务端插件</p>
+        <h1 class="hero-title" data-en="BeaconGame Wiki">BeaconGame 信标攻防 Wiki</h1>
+        <p class="hero-desc" data-en="A match of <strong>asymmetric timed attack/defense</strong>: defenders bury beacons during a short window, attackers breach them before time runs out. All beacons destroyed = attackers win; surviving until time ends = defenders win. This site documents the full mechanics, skills, events, configuration and changelog.">一局<strong>不对称限时攻防</strong>：防守方用短暂窗口埋下信标，进攻方随后限时拆除。信标全灭则攻方胜，撑到时间结束则守方胜。这里收录完整的机制设计、技能数值、事件表、配置指令与版本更新日志。</p>
         <div class="hero-actions">
-          <a class="btn btn-primary btn-lg" href="./design.html">阅读游戏设计</a>
-          <a class="btn btn-lg" href="./changelog.html">更新日志</a>
-          <!-- 下载链接：指向仓库内 download/ 下的 jar，部署后即为可下载地址 -->
-          <a class="btn btn-lg" href="./download/BeaconGame-6.5.jar">下载 v6.5</a>
+          <a class="btn btn-primary btn-lg" href="./design.html" data-en="Read the Design Doc">阅读游戏设计</a>
+          <a class="btn btn-lg" href="./changelog.html" data-en="Changelog">更新日志</a>
+          <a class="btn btn-lg" href="./download/BeaconGame-6.5.jar" data-en="Download v6.5">下载 v6.5</a>
         </div>
       </div>
     </header>
@@ -54,52 +40,51 @@
     <div class="wrap">
       <!-- ===== 项目卡片 ===== -->
       <section id="projects" class="section">
-        <h2 class="section-title">项目</h2>
-        <p class="section-sub">按标签筛选，点击卡片查看详情。</p>
+        <h2 class="section-title" data-en="Projects">项目</h2>
+        <p class="section-sub" data-en="Filter by tag; click a card for details.">按标签筛选，点击卡片查看详情。</p>
         <div id="project-tags" class="tag-filter"></div>
         <div id="project-list" class="grid"></div>
       </section>
 
       <!-- ===== 核心玩法速览 ===== -->
       <section class="section">
-        <h2 class="section-title">一局怎么打</h2>
+        <h2 class="section-title" data-en="How a Match Plays">一局怎么打</h2>
         <div class="grid grid-2">
           <div class="card static">
-            <div class="card-head"><span class="card-icon">🛡️</span><span class="badge">放置阶段</span></div>
-            <h3 class="card-title">守方建设 / 攻方无力</h3>
-            <p class="card-desc">守方睁眼抓紧埋信标；攻方被<strong>蒙眼 + 锁在原地</strong>，只能转头，物理上无法靠近。约 100 秒。</p>
+            <div class="card-head"><span class="card-icon">🛡️</span><span class="badge" data-en="Placement">放置阶段</span></div>
+            <h3 class="card-title" data-en="Defenders build / Attackers helpless">守方建设 / 攻方无力</h3>
+            <p class="card-desc" data-en="Defenders, with eyes open, rush to bury beacons. Attackers are <strong>blinded and frozen in place</strong> — they can only turn their heads, physically unable to approach. About 100 seconds.">守方睁眼抓紧埋信标；攻方被<strong>蒙眼 + 锁在原地</strong>，只能转头，物理上无法靠近。约 100 秒。</p>
           </div>
           <div class="card static">
-            <div class="card-head"><span class="card-icon">⚔️</span><span class="badge badge-warn">进攻阶段</span></div>
-            <h3 class="card-title">限时拆标 / 事件搅局</h3>
-            <p class="card-desc">攻方解盲、PvP 开启、守方<strong>全程发光</strong>。约 10 分钟，事件按进度自动触发：空投、增益减益、核打击、移形换影、终局总攻。</p>
+            <div class="card-head"><span class="card-icon">⚔️</span><span class="badge badge-warn" data-en="Assault">进攻阶段</span></div>
+            <h3 class="card-title" data-en="Timed breach / Events shake things up">限时拆标 / 事件搅局</h3>
+            <p class="card-desc" data-en="Attackers are unblinded, PvP turns on, and defenders <strong>glow the entire phase</strong>. About 10 minutes; events fire by progress: airdrops, buffs/debuffs, nuclear strikes, position swaps, and the final assault.">攻方解盲、PvP 开启、守方<strong>全程发光</strong>。约 10 分钟，事件按进度自动触发：空投、增益减益、核打击、移形换影、终局总攻。</p>
           </div>
         </div>
       </section>
 
       <!-- ===== 快速链接 ===== -->
       <section class="section">
-        <h2 class="section-title">文档导航</h2>
+        <h2 class="section-title" data-en="Documentation">文档导航</h2>
         <div class="grid">
-          <a class="card" href="./design.html#ch1"><div class="card-head"><span class="card-icon">📘</span></div><h3 class="card-title">总览与术语</h3><p class="card-desc">设计支柱、生命周期、全局平衡基线。</p></a>
-          <a class="card" href="./design.html#ch4"><div class="card-head"><span class="card-icon">🧬</span></div><h3 class="card-title">技能系统</h3><p class="card-desc">突袭 / 干扰 / 辅助三条路线与解锁表。</p></a>
-          <a class="card" href="./design.html#ch5"><div class="card-head"><span class="card-icon">🎲</span></div><h3 class="card-title">对局事件</h3><p class="card-desc">按进度百分比触发的搅局表。</p></a>
-          <a class="card" href="./design.html#ch11"><div class="card-head"><span class="card-icon">🛠️</span></div><h3 class="card-title">配置与指令</h3><p class="card-desc">节奏旋钮、划战场、玩家/管理员命令。</p></a>
+          <a class="card" href="./design.html#ch1"><div class="card-head"><span class="card-icon">📘</span></div><h3 class="card-title" data-en="Overview & Terms">总览与术语</h3><p class="card-desc" data-en="Design pillars, life cycle, global balance baseline.">设计支柱、生命周期、全局平衡基线。</p></a>
+          <a class="card" href="./design.html#ch4"><div class="card-head"><span class="card-icon">🧬</span></div><h3 class="card-title" data-en="Skill System">技能系统</h3><p class="card-desc" data-en="Assault / Disruption / Support routes and unlock table.">突袭 / 干扰 / 辅助三条路线与解锁表。</p></a>
+          <a class="card" href="./design.html#ch5"><div class="card-head"><span class="card-icon">🎲</span></div><h3 class="card-title" data-en="Match Events">对局事件</h3><p class="card-desc" data-en="The disruption table triggered by progress percentage.">按进度百分比触发的搅局表。</p></a>
+          <a class="card" href="./design.html#ch11"><div class="card-head"><span class="card-icon">🛠️</span></div><h3 class="card-title" data-en="Config & Commands">配置与指令</h3><p class="card-desc" data-en="Tempo knobs, arena drawing, player/admin commands.">节奏旋钮、划战场、玩家/管理员命令。</p></a>
         </div>
       </section>
 
       <!-- ===== 依赖与环境 ===== -->
       <section class="section">
-        <h2 class="section-title">运行依赖</h2>
+        <h2 class="section-title" data-en="Runtime Requirements">运行依赖</h2>
         <div class="callout callout-warn">
-          <span class="callout-title">硬依赖：领地插件（Dominion 等）</span>
-          边界、PvP、爆炸、火焰、流体、活塞权限完全由<strong>竞技场领地的旗标</strong>托管。
-          服务器必须安装领地插件，否则本插件<strong>不会加载</strong>。详见 <a href="./design.html#ch6">竞技场与领地边界</a>。
+          <span class="callout-title" data-en="Hard dependency: a claim plugin (e.g. Dominion)">硬依赖：领地插件（Dominion 等）</span>
+          <span data-en="Borders, PvP, explosions, fire, fluids and pistons are all governed by the <strong>claim flags of the arena</strong>. The server must have a claim plugin installed, otherwise this plugin will <strong>not load</strong>. See ">边界、PvP、爆炸、火焰、流体、活塞权限完全由<strong>竞技场领地的旗标</strong>托管。服务器必须安装领地插件，否则本插件<strong>不会加载</strong>。详见 </span><a href="./design.html#ch6" data-en="Arena & Borders">竞技场与领地边界</a><span data-en=".">.</span>
         </div>
         <ul class="checks">
-          <li>服务端：<strong>Paper</strong>（基于 Minecraft Java 版 26.2）</li>
-          <li>版本：当前发布 <code>BeaconGame-6.5.jar</code>（最新版，见 <a href="./changelog.html">更新日志</a>）</li>
-          <li>世界：插件自管理三个虚空世界（大厅 / 游戏 / 竞技场），无需自带地形</li>
+          <li data-en="Server: <strong>Paper</strong> (Minecraft Java 26.2)"><strong>服务端</strong>：Paper（基于 Minecraft Java 版 26.2）</li>
+          <li data-en="Version: current release <code>BeaconGame-6.5.jar</code> (see Changelog)">版本：当前发布 <code>BeaconGame-6.5.jar</code>（最新版，见更新日志）</li>
+          <li data-en="Worlds: the plugin self-manages three void worlds (lobby / game / arena); no built-in terrain needed">世界：插件自管理三个虚空世界（大厅 / 游戏 / 竞技场），无需自带地形</li>
         </ul>
       </section>
     </div>
@@ -108,11 +93,10 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <span>© <span id="year">2026</span> BeaconGame Wiki</span>
-      <span class="footer-note">纯静态 · 无构建工具 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/Beacongame">GitHub</a></span>
+      <span class="footer-note" data-en="Static · Plain HTML/CSS/JS · GitHub">纯静态 · 无构建工具 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/Beacongame">GitHub</a></span>
     </div>
   </footer>
 
-  <!-- 相对路径引入脚本；defer 保证 DOM 就绪后执行，且 currentScript 仍有效 -->
   <script src="./js/main.js" defer></script>
 </body>
 </html>
