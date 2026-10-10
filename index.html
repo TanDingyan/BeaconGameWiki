@@ -87,10 +87,54 @@
           <li data-en="Worlds: the plugin self-manages three void worlds (lobby / game / arena); no built-in terrain needed">世界：插件自管理三个虚空世界（大厅 / 游戏 / 竞技场），无需自带地形</li>
         </ul>
       </section>
+
+      <!-- ===== 赞助 / 捐款（明显入口） ===== -->
+      <!--
+        id="donate" 供导航栏“赞助”链接锚点跳转。
+        文本元素各带 data-en，切换语言时由 main.js 替换；
+        图片与链接不带 data-en，中英文下都保留。
+        微信收款码图片用相对路径 ./images/WeChatPay.jpg（与页面层级无关）。
+      -->
+      <section id="donate" class="section donate">
+        <h2 class="section-title" data-en="Support This Project 🙏">赞助本项目 🙏</h2>
+        <p class="section-sub" data-en="If this wiki helps you, feel free to buy me a coffee. Every bit of support keeps the site running.">如果这个 Wiki 帮到了你，欢迎请我喝杯奶茶。你的每一份支持都能让站点持续运转。</p>
+        <div class="donate-grid">
+          <div class="donate-card">
+            <h3 data-en="WeChat Transfer">微信转账</h3>
+            <p data-en="Scan the QR code with WeChat to transfer directly.">使用微信“扫一扫”，扫码即可转账。</p>
+            <!-- 相对路径：首页在站点根，故用 ./images/... -->
+            <a class="donate-img-link" href="./images/WeChatPay.jpg" target="_blank" rel="noopener">
+              <img src="./images/WeChatPay.jpg" alt="微信收款二维码" loading="lazy" />
+            </a>
+          </div>
+          <div class="donate-card">
+            <h3 data-en="Afdian (爱发电)">爱发电</h3>
+            <p data-en="Support me monthly or one-time via the link below.">通过下方链接，按月或一次性支持我。</p>
+            <a class="btn btn-primary" href="https://afdian.com/a/tandingyan" target="_blank" rel="noopener" data-en="Donate on Afdian">前往爱发电赞助</a>
+          </div>
+        </div>
+        <!-- 赞助者回馈：捐款确实附带权益（非强制消费） -->
+        <ul class="donate-perks">
+          <li data-en="Your name on the public thank-you list">加入感谢名单，公开鸣谢</li>
+          <li data-en="Behind-the-scenes creation shares & tutorials">创作过程分享、教学</li>
+          <li data-en="Early access to upcoming works">提前看到新作品</li>
+        </ul>
+        <!-- 说明：自愿捐款、款项个人使用，以上为对赞助者的回馈 -->
+        <p class="donate-disclaimer" data-en="Note: Donations are voluntary and go to personal use. The above are perks I provide to backers — no purchase required.">说明：捐款纯属自愿，款项归我个人使用；以上为我对赞助者的回馈，无任何强制消费。</p>
+      </section>
     </div>
   </main>
 
   <footer class="footer">
+    <!-- 页脚赞助条：全站可见，提供明显的捐款入口 -->
+    <div class="wrap">
+      <div class="footer-donate">
+        <span data-en="Like this wiki? Support it: ">喜欢这个 Wiki？欢迎赞助：</span>
+        <a href="./images/WeChatPay.jpg" target="_blank" rel="noopener" data-en="WeChat QR">微信收款码</a>
+        <span>·</span>
+        <a href="https://afdian.com/a/tandingyan" target="_blank" rel="noopener" data-en="Afdian">爱发电</a>
+      </div>
+    </div>
     <div class="wrap footer-inner">
       <span>© <span id="year">2026</span> BeaconGame Wiki</span>
       <span class="footer-note" data-en="Static · Plain HTML/CSS/JS · <a href='https://github.com/TanDingyan/BeaconGameWiki'>GitHub</a>">纯静态 · 无构建工具 · 原生 HTML/CSS/JS · <a href="https://github.com/TanDingyan/BeaconGameWiki">GitHub</a></span>

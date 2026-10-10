@@ -56,6 +56,7 @@
     { zh: '首页',     en: 'Home',      href: 'index.html' },
     { zh: '游戏设计', en: 'Design',    href: 'design.html' },
     { zh: '更新日志', en: 'Changelog', href: 'changelog.html' },
+    { zh: '赞助',     en: 'Donate',    href: 'index.html#donate' },
     { zh: '下载',     en: 'Download',  href: 'download/BeaconGame-6.5.jar' }
   ];
 
