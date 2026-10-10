@@ -319,7 +319,10 @@ ul.clean li { margin-bottom: 6px; }
   background: linear-gradient(180deg, var(--brand-soft) 0%, var(--bg) 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin: 8px 0;
+  /* 覆盖 .section 的 padding:44px 0：.section 只有上下内边距，
+     这里补上左右内边距，避免标题/卡片文字贴着圆角边框（错位） */
+  padding: 28px 24px;
+  margin: 16px 0;
 }
 .donate-grid {
   display: grid;
@@ -334,7 +337,15 @@ ul.clean li { margin-bottom: 6px; }
   box-shadow: var(--shadow);
   padding: 20px;
   text-align: center;
+  /* 纵向排列，让二维码/按钮对齐到卡片底部（两卡高度不同时也对齐） */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+.donate-card h3,
+.donate-card p { align-self: stretch; }   /* 标题/段落占满卡片宽度，文字居中更整齐 */
+.donate-card .donate-img-link,
+.donate-card > .btn { margin-top: auto; } /* 二维码/按钮对齐到底部 */
 .donate-card h3 { margin: 0 0 8px; font-size: 18px; }
 .donate-card p  { margin: 0 0 16px; color: var(--muted); font-size: 15px; }
 

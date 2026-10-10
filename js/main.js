@@ -57,7 +57,9 @@
     { zh: '游戏设计', en: 'Design',    href: 'design.html' },
     { zh: '更新日志', en: 'Changelog', href: 'changelog.html' },
     { zh: '赞助',     en: 'Donate',    href: 'index.html#donate' },
-    { zh: '下载',     en: 'Download',  href: 'download/BeaconGame-6.5.jar' }
+    { zh: '下载',     en: 'Download',  href: 'download/BeaconGame-6.5.jar' },
+    // external: true 表示外链，跳过 url() 拼接、新标签打开
+    { zh: '作品主页', en: 'Modrinth',  href: 'https://modrinth.com/plugin/beacongame', external: true }
   ];
 
   var SIDEBAR = [
@@ -127,8 +129,10 @@
     var lang = getLang();
     var links = NAV_LINKS.map(function (item, i) {
       var label = lang === 'en' ? item.en : item.zh;
-      var active = isActivePage(item.href) ? ' class="is-active"' : '';
-      return '<li><a href="' + url(item.href) + '" data-nav-i="' + i + '"' + active + '>' + label + '</a></li>';
+      var href = item.external ? item.href : url(item.href);   // 外链不拼站点根
+      var active = (!item.external && isActivePage(item.href)) ? ' class="is-active"' : '';
+      var ext = item.external ? ' target="_blank" rel="noopener"' : '';
+      return '<li><a href="' + href + '"' + ext + ' data-nav-i="' + i + '"' + active + '>' + label + '</a></li>';
     }).join('');
 
     nav.className = 'navbar';
