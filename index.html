@@ -119,6 +119,11 @@
           <li data-en="Behind-the-scenes creation shares & tutorials">创作过程分享、教学</li>
           <li data-en="Early access to upcoming works">提前看到新作品</li>
         </ul>
+        <!-- 鸣谢名单：人员数据保存在 js/main.js 的 THANKS 数组，由 JS 动态渲染 -->
+        <div class="thanks">
+          <h3 class="thanks-title" data-en="Acknowledgements">鸣谢名单</h3>
+          <div id="thanks-list" class="thanks-list"></div>
+        </div>
         <!-- 说明：自愿捐款、款项个人使用，以上为对赞助者的回馈 -->
         <p class="donate-disclaimer" data-en="Note: Donations are voluntary and go to personal use. The above are perks I provide to backers — no purchase required.">说明：捐款纯属自愿，款项归我个人使用；以上为我对赞助者的回馈，无任何强制消费。</p>
       </section>
@@ -141,6 +146,8 @@
     </div>
   </footer>
 
+  <!-- 鸣谢名单数据：普通 <script> 引入，挂到 window.THANKS（支持本地 file:// 双击打开） -->
+  <script src="./data/thanks.js"></script>
   <script src="./js/main.js" defer></script>
 </body>
 </html>

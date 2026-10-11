@@ -381,6 +381,19 @@ ul.clean li { margin-bottom: 6px; }
 }
 .donate-perks li::before { content: "✓"; color: var(--ok); font-weight: 700; }
 
+/* 鸣谢名单：标题 + 姓名胶囊 */
+.thanks { margin: 0 0 14px; }
+.thanks-title { margin: 0 0 10px; font-size: 16px; color: var(--muted); font-weight: 600; }
+.thanks-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.thanks-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: var(--brand-soft); border: 1px solid var(--brand);
+  border-radius: 999px; font-size: 14px; color: var(--brand); font-weight: 600;
+}
+.thanks-chip::before { content: "❤"; font-size: 13px; }
+.thanks-empty { color: var(--muted); }
+
 /* 页脚赞助条：全站可见、醒目（品牌色底） */
 .footer-donate {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;

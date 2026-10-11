@@ -109,6 +109,11 @@
     }
   ];
 
+  /* ============ 四-B、鸣谢名单数据 ============ */
+  /* 名单已外部化到 data/thanks.js（全局 window.THANKS），不再硬编码于此；
+     新增人员只需编辑该数据文件，HTML/CSS/本文件都不用动。
+     读取时统一用 window.THANKS，并兜底为空数组，防止数据文件未加载时报错。 */
+
   /* ============ 五、路径 / 激活判断 ============ */
   function pathKey() {
     var p = location.pathname
@@ -308,10 +313,22 @@
     var el = document.getElementById('year'); if (el) el.textContent = new Date().getFullYear();
   }
 
+  /* ============ 十-B、鸣谢名单渲染 ============ */
+  function renderThanks() {
+    var box = document.getElementById('thanks-list'); if (!box) return;  // 仅捐款区所在页存在
+    var list = window.THANKS || [];   // 名单来自 data/thanks.js（全局），兜底为空数组防报错
+    if (!list.length) { box.innerHTML = '<span class="thanks-empty">—</span>'; return; }
+    // 姓名是专有名词，无需翻译；用 escapeHtml 防 XSS（数据若改为外部来源也安全）
+    box.innerHTML = list.map(function (p) {
+      return '<span class="thanks-chip">' + escapeHtml(p.name) + '</span>';
+    }).join('');
+  }
+
   /* ============ 十一、启动 ============ */
   buildNavbar();
   buildSidebar();
   renderProjectFilters();
+  renderThanks();
   fillYear();
   // 应用已保存语言：先把中文原文缓存进 dataset.zh，若英文则切到 data-en
   applyTranslations(getLang());
